@@ -1,1 +1,42 @@
-<p>dashboard works here!</p>
+<div class="p-6 space-y-6">
+  <h1 class="text-3xl font-bold">Expense Tracker</h1>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-green-100 p-4 rounded shadow">
+      <h2 class="text-lg font-semibold">Total Income</h2>
+      <p class="text-2xl font-bold text-green-700">
+        {{ totalIncome | currency }}
+      </p>
+    </div>
+    <div class="bg-red-100 p-4 rounded shadow">
+      <h2 class="text-lg font-semibold">Total Expenses</h2>
+      <p class="text-2xl font-bold text-red-700">
+        {{ totalExpenses | currency }}
+      </p>
+    </div>
+    <div class="bg-blue-100 p-4 rounded shadow">
+      <h2 class="text-lg font-semibold">Balance</h2>
+      <p class="text-2xl font-bold text-blue-700">{{ balance | currency }}</p>
+    </div>
+  </div>
+
+  <!-- Add Transaction Button -->
+  <button
+    (click)="resetForm()"
+    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+  >
+    Add Transaction
+  </button>
+
+  <!-- Transaction Form Modal -->
+  <app-transaction-form
+    *ngIf="transactionFormAdded"
+    #transactionForm
+    (added)="onTransactionAdded()"
+    (close)="transactionFormAdded = false"
+  ></app-transaction-form>
+
+  <!-- Transaction List Preview -->
+  <app-transaction-list #transactionList></app-transaction-list>
+</div>

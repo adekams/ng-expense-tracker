@@ -1,15 +1,21 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Dashboard } from './dashboard';
+import { DashboardComponent } from '@features/dashboard/dashboard';
 import { RouterModule, Routes } from '@angular/router';
+import { CurrencyPipe } from '@angular/common';
+import { TransactionsModule } from '@features/transactions/transactions-module';
 
 const routes: Routes = [
-  { path: '', component: Dashboard }, // this is what loads at '/'
+  { path: '', component: DashboardComponent }, // this is what loads at '/'
 ];
 
 @NgModule({
-  declarations: [Dashboard],
-  imports: [CommonModule, RouterModule.forChild(routes)],
-  exports: [Dashboard],
+  declarations: [DashboardComponent],
+  imports: [
+    CommonModule,
+    RouterModule.forChild(routes),
+    CurrencyPipe,
+    TransactionsModule,
+  ],
 })
 export class DashboardModule {}
