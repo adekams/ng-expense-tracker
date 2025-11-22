@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export interface Transaction {
   id: string;
   amount: number;
+  currency: string; // e.g. "NGN", "USD", "EUR"
   category: string;
   date: string;
   description?: string;
@@ -18,6 +19,11 @@ export class TransactionService {
   );
 
   constructor() {}
+
+  private updateLocalStorage(transactions: Transaction[]) {
+    localStorage.setItem(this.storageKey, JSON.stringify(transactions));
+    this.transactions$.next(transactions);
+  }
 
   private loadFromStorage(): Transaction[] {
     return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
@@ -42,5 +48,10 @@ export class TransactionService {
     const filtered = this.transactions$.value.filter((t) => t.id !== id);
     this.saveToStorage(filtered);
     this.transactions$.next(filtered); // emit updated list
+  }
+
+  clearAll(): void {
+    localStorage.removeItem(this.storageKey);
+    this.updateLocalStorage([]);
   }
 }

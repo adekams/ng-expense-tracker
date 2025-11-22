@@ -18,7 +18,8 @@ export class TransactionFormComponent {
     private transactionService: TransactionService
   ) {
     this.form = this.fb.group({
-      amount: [0, [Validators.required, Validators.min(0.01)]],
+      currency: ['NGN', Validators.required],
+      amount: [0, [Validators.required]],
       category: ['', Validators.required],
       date: [new Date().toISOString().substring(0, 10), Validators.required],
       description: [''],
@@ -26,16 +27,32 @@ export class TransactionFormComponent {
   }
 
   submit() {
-    if (this.form.valid) {
-      this.transactionService.addTransaction(this.form.value);
-      this.form.reset({
-        amount: 0,
-        category: '',
-        date: new Date().toISOString().substring(0, 10),
-        description: '',
-      });
-      this.added.emit();
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
     }
+
+    const form = this.form.value;
+
+    const newTx = {
+      amount: form.amount,
+      currency: form.currency,
+      category: form.category,
+      date: form.date,
+      description: form.description?.trim() || '-',
+    };
+
+    this.transactionService.addTransaction(newTx);
+
+    this.form.reset({
+      amount: 0,
+      category: '',
+      currency: 'NGN',
+      date: new Date().toISOString().substring(0, 10),
+      description: '',
+    });
+
+    this.added.emit();
   }
 
   onClose() {

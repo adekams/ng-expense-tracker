@@ -12,14 +12,16 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let t of transactions" class="border-t">
-        <td class="px-4 py-2">{{ t.date }}</td>
-        <td class="px-4 py-2">{{ t.category }}</td>
-        <td class="px-4 py-2">{{ t.amount | currency }}</td>
-        <td class="px-4 py-2">{{ t.description }}</td>
+      <tr *ngFor="let tx of transactions" class="border-t">
+        <td class="px-4 py-2">{{ tx.date || "-" }}</td>
+        <td class="px-4 py-2">{{ tx.category || "-" }}</td>
+        <td class="px-4 py-2">
+          {{ symbols[tx.currency] || tx.currency }}{{ tx.amount }}
+        </td>
+        <td class="px-4 py-2">{{ tx.description || "-" }}</td>
         <td class="px-4 py-2">
           <button
-            (click)="deleteTransaction(t.id)"
+            (click)="showDeleteConfirmation(tx.id)"
             class="text-red-500 hover:text-red-700"
           >
             Delete
@@ -29,3 +31,11 @@
     </tbody>
   </table>
 </div>
+
+<app-confirm-modal
+  *ngIf="confirmationVisible"
+  title="Delete Transaction"
+  message="Are you sure you want to delete this transaction? This cannot be undone."
+  (confirmed)="confirmDelete()"
+  (cancelled)="hideDeleteConfirmation()"
+></app-confirm-modal>
