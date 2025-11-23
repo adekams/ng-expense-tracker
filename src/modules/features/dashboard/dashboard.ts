@@ -29,6 +29,8 @@ export class DashboardComponent implements OnInit {
   baseCurrency: string = 'NGN';
   summaryCurrency: string = 'NGN';
 
+  errorMessage: string | null = null;
+
   @ViewChild('transactionList') transactionList!: TransactionListComponent;
   @ViewChild('transactionForm') transactionForm!: TransactionFormComponent;
 
@@ -97,23 +99,49 @@ export class DashboardComponent implements OnInit {
   }
 
   convertAndComputeTotals() {
-    this.exchangeRateSvc.getRates(this.baseCurrency).subscribe((rates) => {
-      let income = 0;
-      let expenses = 0;
+    this.errorMessage = null;
 
-      this.transactions.forEach((tx) => {
-        const rate = rates[tx.currency] || 1;
-        const converted = tx.amount * rate; // convert to base
-        if (tx.amount > 0) income += converted;
-        else expenses += Math.abs(converted);
-      });
+    const currencies = Array.from(
+      new Set(this.transactions.map((tx) => tx.currency))
+    ).filter((c) => c !== this.baseCurrency);
 
-      this.totalIncome = income;
-      this.totalExpenses = expenses;
-      this.balance = income - expenses;
-      this.summaryCurrency = this.baseCurrency;
+    this.exchangeRateSvc.getRates(this.baseCurrency, currencies).subscribe({
+      next: (data) => {
+        const rates = data.quotes;
+        let income = 0;
+        let expenses = 0;
 
-      this.cdr.detectChanges();
+        this.transactions.forEach((tx) => {
+          if (tx.currency === this.baseCurrency) {
+            if (tx.amount > 0) income += tx.amount;
+            else expenses += Math.abs(tx.amount);
+          } else {
+            // API gives inverted conversion with baseTarget,
+            const key = `${this.baseCurrency}${tx.currency}`; // e.g., NGNEUR
+            const rate = rates[key];
+
+            if (!rate) {
+              console.warn(`No conversion rate found for ${tx.currency}`);
+              return;
+            }
+
+            const converted = tx.amount / rate; // amount in base currency
+
+            if (tx.amount > 0) income += converted;
+            else expenses += Math.abs(converted);
+          }
+        });
+
+        this.totalIncome = income;
+        this.totalExpenses = expenses;
+        this.balance = income - expenses;
+        this.summaryCurrency = this.baseCurrency;
+      },
+      error: (err) => {
+        console.error('Exchange rate API error', err);
+        this.errorMessage =
+          'Failed to fetch exchange rates. Totals may be inaccurate.';
+      },
     });
   }
 

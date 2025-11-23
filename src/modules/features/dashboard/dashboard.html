@@ -15,6 +15,12 @@
     </select>
   </div>
 
+  @if(errorMessage) {
+  <div class="bg-red-100 text-red-700 p-2 rounded mb-4">
+    {{ errorMessage }}
+  </div>
+  }
+
   <!-- Summary Cards -->
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="bg-green-100 p-4 rounded shadow">
@@ -57,21 +63,23 @@
   </div>
 
   <!-- Transaction Form Modal -->
+  @if(transactionFormAdded) {
   <app-transaction-form
-    *ngIf="transactionFormAdded"
     #transactionForm
     (added)="onTransactionAdded()"
     (close)="transactionFormAdded = false"
-  ></app-transaction-form>
+  ></app-transaction-form
+  >}
 
   <!-- Transaction List Preview -->
   <app-transaction-list #transactionList></app-transaction-list>
 </div>
 
+@if(clearConfirmVisible) {
 <app-confirm-modal
-  *ngIf="clearConfirmVisible"
   title="Delete All Transactions"
   message="Are you sure you want to delete all transactions? This cannot be undone."
   (confirmed)="confirmClearAll()"
   (cancelled)="hideClearConfirm()"
-></app-confirm-modal>
+></app-confirm-modal
+>}
