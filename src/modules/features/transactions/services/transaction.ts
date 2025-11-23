@@ -4,8 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface Transaction {
   id: string;
+  userId: string;
   amount: number;
-  currency: string; // e.g. "NGN", "USD", "EUR"
+  currency: string;
   category: string;
   date: string;
   description?: string;
@@ -18,7 +19,7 @@ export class TransactionService {
     this.loadFromStorage()
   );
 
-  constructor() {}
+  constructor(private firestore: Firestore, private authSvc: AuthService) {}
 
   private updateLocalStorage(transactions: Transaction[]) {
     localStorage.setItem(this.storageKey, JSON.stringify(transactions));
@@ -34,20 +35,19 @@ export class TransactionService {
   }
 
   getTransactions(): Observable<Transaction[]> {
-    return this.transactions$.asObservable();
+    const user = this.auth.currentUser;
+    const transactionsRef = collection(this.firestore, 'transactions');
+    const q = query(transactionsRef, where('userId', '==', user?.uid));
+    return collectionData(q, { idField: 'id' }) as Observable<Transaction[]>;
   }
 
-  addTransaction(transaction: Omit<Transaction, 'id'>) {
-    const newTransaction: Transaction = { ...transaction, id: uuidv4() };
-    const updated = [...this.transactions$.value, newTransaction];
-    this.saveToStorage(updated);
-    this.transactions$.next(updated); // emit updated list
+  addTransaction(tx: Transaction) {
+    const user = this.auth.currentUser;
+    return addDoc(collection(this.firestore, 'transactions'), { ...tx, userId: user?.uid });
   }
 
   deleteTransaction(id: string) {
-    const filtered = this.transactions$.value.filter((t) => t.id !== id);
-    this.saveToStorage(filtered);
-    this.transactions$.next(filtered); // emit updated list
+    return deleteDoc(doc(this.firestore, `transactions/${id}`));
   }
 
   clearAll(): void {
