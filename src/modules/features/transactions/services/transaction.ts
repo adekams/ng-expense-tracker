@@ -1,6 +1,18 @@
 import { Injectable } from '@angular/core';
+import { Auth } from '@angular/fire/auth';
+import { collectionData } from '@angular/fire/firestore';
+
+import {
+  Firestore,
+  collection,
+  addDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  serverTimestamp,
+} from '@angular/fire/firestore';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface Transaction {
   id: string;
@@ -19,9 +31,9 @@ export class TransactionService {
     this.loadFromStorage()
   );
 
-  constructor(private firestore: Firestore, private authSvc: AuthService) {}
+  constructor(private firestore: Firestore, private auth: Auth) {}
 
-  private updateLocalStorage(transactions: Transaction[]) {
+  updateLocalStorage(transactions: Transaction[]) {
     localStorage.setItem(this.storageKey, JSON.stringify(transactions));
     this.transactions$.next(transactions);
   }
@@ -30,20 +42,32 @@ export class TransactionService {
     return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
   }
 
-  private saveToStorage(transactions: Transaction[]) {
-    localStorage.setItem(this.storageKey, JSON.stringify(transactions));
-  }
-
   getTransactions(): Observable<Transaction[]> {
     const user = this.auth.currentUser;
+    if (!user) return this.transactions$.asObservable();
     const transactionsRef = collection(this.firestore, 'transactions');
-    const q = query(transactionsRef, where('userId', '==', user?.uid));
-    return collectionData(q, { idField: 'id' }) as Observable<Transaction[]>;
+    const q = query(transactionsRef, where('userId', '==', user.uid));
+    const obs = collectionData(q, { idField: 'id' }) as Observable<
+      Transaction[]
+    >;
+
+    // Keep local cache in sync
+    obs.subscribe((data) => this.updateLocalStorage(data));
+    return this.transactions$.asObservable(); // Always return local + synced
   }
 
-  addTransaction(tx: Transaction) {
+  // Accept only the form data, then add userId & timestamp
+  async addTransaction(tx: Omit<Transaction, 'id' | 'userId'>) {
     const user = this.auth.currentUser;
-    return addDoc(collection(this.firestore, 'transactions'), { ...tx, userId: user?.uid });
+    if (!user) throw new Error('User not logged in');
+
+    const docRef = await addDoc(collection(this.firestore, 'transactions'), {
+      ...tx,
+      userId: user.uid,
+      createdAt: serverTimestamp(),
+    });
+
+    return docRef;
   }
 
   deleteTransaction(id: string) {

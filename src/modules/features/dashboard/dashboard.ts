@@ -6,11 +6,21 @@ import {
 import { TransactionListComponent } from '@features/transactions/components/transaction-list/transaction-list';
 import { TransactionFormComponent } from '@features/transactions/modals/transaction-form/transaction-form';
 import { ExchangeRateService } from '@features/transactions/services/exchange-rate.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ConfirmModalComponent } from '@shared/modals/confirm-modal/confirm-modal';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: false,
+  standalone: true,
   templateUrl: './dashboard.html',
+  imports: [
+    CommonModule,
+    FormsModule,
+    TransactionListComponent,
+    TransactionFormComponent,
+    ConfirmModalComponent,
+  ],
 })
 export class DashboardComponent implements OnInit {
   symbols: Record<string, string> = {
@@ -66,6 +76,8 @@ export class DashboardComponent implements OnInit {
     this.transactionSvc.getTransactions().subscribe((data) => {
       this.transactions = data;
       this.calculateSummary();
+
+      this.transactionSvc.updateLocalStorage(data);
     });
   }
 

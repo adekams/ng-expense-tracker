@@ -1,11 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { Transaction, TransactionService } from '../../services/transaction';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+import { ConfirmModalComponent } from '@shared/modals/confirm-modal/confirm-modal';
 
 @Component({
   selector: 'app-transaction-list',
-  standalone: false,
+  standalone: true,
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.scss',
+  imports: [CommonModule, ReactiveFormsModule, ConfirmModalComponent],
 })
 export class TransactionListComponent implements OnInit {
   transactions: Transaction[] = [];
@@ -47,7 +51,7 @@ export class TransactionListComponent implements OnInit {
   confirmDelete() {
     if (this.selectedTransactionId) {
       this.transactionService.deleteTransaction(this.selectedTransactionId);
-      this.loadTransactions(); // reload list
+      this.loadTransactions();
     }
     this.hideDeleteConfirmation();
   }
