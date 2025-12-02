@@ -1,31 +1,43 @@
-<div class="auth-wrapper">
-  <div class="auth-box">
+<div class="auth-container">
+  <div class="auth-card">
     <h2>Welcome Back</h2>
-    <p class="subtitle">Log in to continue</p>
+    <p class="subtitle">Login to continue</p>
 
-    <form (ngSubmit)="login()">
-      <input
-        type="email"
-        placeholder="Email"
-        [(ngModel)]="email"
-        name="email"
-        required
-      />
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      <div class="input-group">
+        <label>Email</label>
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="Enter your email"
+        />
 
-      <input
-        type="password"
-        placeholder="Password"
-        [(ngModel)]="password"
-        name="password"
-        required
-      />
+        @if(loginForm.controls['email'].invalid &&
+        loginForm.controls['email'].touched) {
+        <small class="error">Valid email is required</small>
+        }
+      </div>
 
-      <button type="submit" class="btn-primary">Login</button>
+      <div class="input-group">
+        <label>Password</label>
+        <input
+          type="password"
+          formControlName="password"
+          placeholder="Enter your password"
+        />
+
+        @if(loginForm.controls['password'].invalid &&
+        loginForm.controls['password'].touched) {
+        <small class="error">Password is required</small>
+        }
+      </div>
+
+      <button class="primary-btn" [disabled]="loginForm.invalid">Login</button>
     </form>
 
     <p class="switch-text">
       Don't have an account?
-      <a routerLink="./signup" (click)="clicked()">Create one</a>
+      <a routerLink="/signup">Create one</a>
     </p>
   </div>
 </div>
