@@ -1,5 +1,22 @@
 /* You can add global styles to this file, and also import other style files */
+@use "ngx-toastr/toastr" as toastr;
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.toast-success {
+  background-color: #28a745 !important;
+}
+
+.toast-error {
+  background-color: #dc3545 !important;
+}
+
+.toast-info {
+  background-color: #17a2b8 !important;
+}
+
+.toast-warning {
+  background-color: #ffc107 !important;
+}
