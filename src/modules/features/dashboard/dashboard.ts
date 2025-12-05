@@ -23,7 +23,8 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { onAuthStateChanged } from 'firebase/auth';
-import { Auth } from '@angular/fire/auth';
+import { Auth, deleteUser, signOut } from '@angular/fire/auth';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -60,10 +61,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   errorMessage: string | null = null;
 
+  userEmail: string | null = null;
+  showUserMenu = false;
+  deleteAccountVisible = false;
+
   @ViewChild('transactionList') transactionList!: TransactionListComponent;
   @ViewChild('transactionForm') transactionForm!: TransactionFormComponent;
 
   constructor(
+    private router: Router,
     private toast: ToastrService,
     private cdr: ChangeDetectorRef,
     private transactionSvc: TransactionService,
@@ -71,12 +77,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    const user = this.auth.currentUser;
+    this.userEmail = user?.email || null;
+
     this.loadTransactions();
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  toggleUserMenu() {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  closeUserMenu() {
+    this.showUserMenu = false;
   }
 
   resetForm() {
@@ -214,5 +231,39 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.transactionFormAdded = false;
     this.hideClearConfirm();
     this.cdr.detectChanges();
+  }
+
+  showDeleteAccount() {
+    this.deleteAccountVisible = true;
+  }
+
+  hideDeleteAccount() {
+    this.deleteAccountVisible = false;
+  }
+
+  async logout() {
+    await signOut(this.auth);
+    this.toast.success('Logged out successfully');
+    this.router.navigate(['/login']);
+  }
+
+  async confirmDeleteAccount() {
+    const user = this.auth.currentUser;
+
+    if (!user) return;
+
+    try {
+      await deleteUser(user);
+      this.toast.success('Your Account has been deleted successfully');
+      this.router.navigate(['/login']);
+    } catch (err: any) {
+      if (err.code === 'auth/requires-recent-login') {
+        this.toast.error('Please log in again before deleting your account.');
+      } else {
+        this.toast.error('Failed to delete account.');
+      }
+    }
+
+    this.deleteAccountVisible = false;
   }
 }
