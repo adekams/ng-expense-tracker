@@ -1,59 +1,92 @@
-# NgExpenseTracker
+# Expense Tracker
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.1.
+A modern expense management app built with Angular that helps you track your spending, manage multiple currency conversions, and visualize your financial data in real-time.
 
-## Development server
+## What This Project Does
 
-To start a local development server, run:
+The app lets you log transactions in different currencies, view your expense summary with real-time currency conversion, and manage your financial data securely. You can create an account, log in, add expenses or income, and see a comprehensive dashboard showing your financial overview.
 
-```bash
-ng serve
-```
+## Tech Stack
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Built with Angular 20, Firebase (authentication and database), Tailwind CSS for styling, and real-time currency exchange rate integration.
 
-## Code scaffolding
+## Getting Started
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Prerequisites
 
-```bash
-ng generate component component-name
-```
+Make sure you have Node.js and npm installed on your machine.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Installation
+
+1. Clone the repo:
 
 ```bash
-ng generate --help
+git clone <your-repo-url>
+cd ng-expense-tracker
 ```
 
-## Building
-
-To build the project run:
+2. Install dependencies:
 
 ```bash
-ng build
+npm install
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Running Locally
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+Start the development server:
 
 ```bash
-ng test
+npm start
 ```
 
-## Running end-to-end tests
+Open your browser and go to `http://localhost:4200/`. The app will hot-reload as you make changes.
 
-For end-to-end (e2e) testing, run:
+### Building for Production
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+Your production-ready files will be in the `dist/` directory.
 
-## Additional Resources
+### Running Tests
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```bash
+npm test
+```
+
+## Environment Configuration
+
+This project uses environment files for configuration. You'll need to set up your environment variables securely. For detailed instructions on handling sensitive keys safely and deploying to Netlify, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Quick Setup
+
+1. The project uses two environment files:
+
+   - `src/environments/environment.ts` for development
+   - `src/environments/environment.prod.ts` for production
+
+2. These files contain sensitive keys like Firebase API keys and auth domains.
+
+## Project Structure
+
+- `/src/app` - Main application component and routes
+- `/src/modules/core` - Auth guards and services
+- `/src/modules/features` - Feature modules (auth, dashboard, transactions)
+- `/src/modules/shared` - Reusable components, pipes, and services
+- `/src/environments` - Environment configuration files
+
+## Development Notes
+
+- The app uses Tailwind CSS for styling
+- Authentication is handled via Firebase
+- Currency conversion happens in real-time using exchange rate service
+- State management and component communication through Angular services
+
+## Contributing
+
+Feel free to submit issues and enhancement requests.
+
+## License
+
+This project is open source.
