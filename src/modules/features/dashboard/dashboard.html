@@ -1,1 +1,85 @@
-<p>dashboard works here!</p>
+<div class="p-6 space-y-6">
+  <h1 class="text-3xl font-bold">Expense Tracker</h1>
+
+  <div class="mb-4 flex items-center">
+    <label class="mr-2 font-semibold">Base Currency:</label>
+    <select
+      [(ngModel)]="baseCurrency"
+      (change)="calculateSummary()"
+      class="border px-2 py-1 rounded"
+    >
+      <option value="USD">USD</option>
+      <option value="EUR">EUR</option>
+      <option value="NGN">NGN</option>
+      <option value="GBP">GBP</option>
+    </select>
+  </div>
+
+  @if(errorMessage) {
+  <div class="bg-red-100 text-red-700 p-2 rounded mb-4">
+    {{ errorMessage }}
+  </div>
+  }
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-green-100 p-4 rounded shadow">
+      <h2 class="text-lg font-semibold">Total Income</h2>
+      <p class="text-2xl font-bold text-green-700">
+        {{ symbols[summaryCurrency] || summaryCurrency
+        }}{{ totalIncome | number : "1.0-0" }}
+      </p>
+    </div>
+    <div class="bg-red-100 p-4 rounded shadow">
+      <h2 class="text-lg font-semibold">Total Expenses</h2>
+      <p class="text-2xl font-bold text-red-700">
+        {{ symbols[summaryCurrency] || summaryCurrency
+        }}{{ totalExpenses | number : "1.0-0" }}
+      </p>
+    </div>
+    <div class="bg-blue-100 p-4 rounded shadow">
+      <h2 class="text-lg font-semibold">Balance</h2>
+      <p class="text-2xl font-bold text-blue-700">
+        {{ symbols[summaryCurrency] || summaryCurrency
+        }}{{ balance | number : "1.0-0" }}
+      </p>
+    </div>
+  </div>
+
+  <div class="flex flex-col sm:flex-row sm:justify-between gap-2">
+    <button
+      (click)="resetForm()"
+      class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+    >
+      Add Transaction
+    </button>
+
+    <button
+      (click)="showClearConfirm()"
+      class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+    >
+      Clear All
+    </button>
+  </div>
+
+  <!-- Transaction Form Modal -->
+  @if(transactionFormAdded) {
+  <app-transaction-form
+    #transactionForm
+    (added)="onTransactionAdded()"
+    (close)="transactionFormAdded = false"
+  ></app-transaction-form
+  >}
+
+  <!-- Transaction List Preview -->
+  <app-transaction-list #transactionList></app-transaction-list>
+</div>
+
+@if(clearConfirmVisible) {
+<app-confirm-modal
+  title="Delete All Transactions"
+  message="Are you sure you want to delete all transactions? This cannot be undone."
+  (confirmed)="confirmClearAll()"
+  (cancelled)="hideClearConfirm()"
+></app-confirm-modal
+>}
