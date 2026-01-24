@@ -1,71 +1,91 @@
-.auth-wrapper {
+.auth-container {
+  width: 100%;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background: #f8f9fa;
-  padding: 20px;
+  background: #f5f7fb;
 }
 
-.auth-box {
-  width: 100%;
-  max-width: 380px;
+.auth-card {
+  width: 380px;
   background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   text-align: center;
-}
 
-.auth-box h2 {
-  margin-bottom: 10px;
-  font-size: 24px;
-  font-weight: 600;
-}
+  h2 {
+    margin: 0 0 5px;
+  }
 
-.subtitle {
-  color: #666;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
+  .subtitle {
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #666;
+  }
 
-input {
-  width: 100%;
-  padding: 12px;
-  margin: 8px 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-}
+  form {
+    width: 100%;
+  }
 
-input:focus {
-  border-color: #4f46e5;
-  outline: none;
-}
+  .input-group {
+    text-align: left;
+    margin-bottom: 18px;
 
-.btn-primary {
-  width: 100%;
-  padding: 12px;
-  margin-top: 15px;
-  background: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+    }
 
-.btn-primary:hover {
-  background: #4338ca;
-}
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
 
-.switch-text {
-  margin-top: 15px;
-  font-size: 14px;
-}
+      &:focus {
+        border-color: #4a6cf7;
+      }
+    }
 
-.switch-text a {
-  color: #4f46e5;
-  text-decoration: none;
-  font-weight: 500;
+    .error {
+      color: #e74c3c;
+      font-size: 12px;
+      margin-top: 3px;
+      display: block;
+    }
+  }
+
+  .primary-btn {
+    width: 100%;
+    padding: 12px;
+    background: #4a6cf7;
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .switch-text {
+    margin-top: 15px;
+    font-size: 14px;
+
+    a {
+      color: #4a6cf7;
+      font-weight: 600;
+      margin-left: 4px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+  }
 }

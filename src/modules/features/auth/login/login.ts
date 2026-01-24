@@ -1,36 +1,46 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Component } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '@core/services/authService';
+
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  styleUrl: './login.scss',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './login.html',
+  styleUrls: ['./login.scss'],
 })
 export class LoginComponent {
-  email = '';
-  password = '';
-  errorMessage = '';
-  loading = false;
-
-  constructor(private auth: AuthService, private router: Router) {}
-
-  login() {
-    this.errorMessage = '';
-    this.loading = true;
-
-    this.auth
-      .login(this.email, this.password)
-      .then(() => this.router.navigate(['/dashboard']))
-      .catch((err) => (this.errorMessage = err.message))
-      .finally(() => (this.loading = false));
+  loginForm!: any;
+  constructor(
+    private toast: ToastrService,
+    private fb: FormBuilder,
+    private authSvc: AuthService,
+    private router: Router
+  ) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required],
+    });
   }
 
-  clicked() {
-    alert('clicked');
+  async onLogin() {
+    if (this.loginForm.invalid) return;
+
+    try {
+      await this.authSvc.login(
+        this.loginForm.value.email!,
+        this.loginForm.value.password!
+      );
+      this.toast.success('Logged in successfully!');
+      setTimeout(() => {
+        this.router.navigate(['/dashboard']);
+      }, 1000);
+    } catch (err) {
+      alert('Login failed. Check your email or password.');
+    }
   }
 }

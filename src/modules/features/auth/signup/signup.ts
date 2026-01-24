@@ -1,31 +1,52 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AuthService } from '@core/services/authService';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
+import { Router, RouterModule } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './signup.html',
+  styleUrls: ['./signup.scss'],
 })
 export class SignupComponent {
-  email = '';
-  password = '';
   errorMessage = '';
-  loading = false;
+  isLoading = false;
+  signUpForm!: any;
+  constructor(
+    private toast: ToastrService,
+    private fb: FormBuilder,
+    private auth: Auth,
+    private router: Router
+  ) {
+    this.signUpForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required],
+    });
+  }
 
-  constructor(private auth: AuthService, private router: Router) {}
-
-  signup() {
+  async handleSignup() {
     this.errorMessage = '';
-    this.loading = true;
+    this.isLoading = true;
 
-    this.auth
-      .signup(this.email, this.password)
-      .then(() => this.router.navigate(['/dashboard']))
-      .catch((err) => (this.errorMessage = err.message))
-      .finally(() => (this.loading = false));
+    try {
+      await createUserWithEmailAndPassword(
+        this.auth,
+        this.signUpForm.value.email,
+        this.signUpForm.value.password
+      );
+
+      this.isLoading = false;
+      this.toast.success('Account created! You can now log in.');
+      setTimeout(() => {
+        this.router.navigate(['/dashboard']);
+      }, 1000);
+    } catch (err: any) {
+      this.isLoading = false;
+      this.errorMessage = err.message || 'Signup failed';
+    }
   }
 }

@@ -1,4 +1,12 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  ViewChild,
+  OnDestroy,
+  inject,
+} from '@angular/core';
+
 import {
   TransactionService,
   Transaction,
@@ -6,9 +14,17 @@ import {
 import { TransactionListComponent } from '@features/transactions/components/transaction-list/transaction-list';
 import { TransactionFormComponent } from '@features/transactions/modals/transaction-form/transaction-form';
 import { ExchangeRateService } from '@features/transactions/services/exchange-rate.service';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmModalComponent } from '@shared/modals/confirm-modal/confirm-modal';
+import { ToastrService } from 'ngx-toastr';
+
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { onAuthStateChanged } from 'firebase/auth';
+import { Auth, deleteUser, signOut } from '@angular/fire/auth';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,7 +38,11 @@ import { ConfirmModalComponent } from '@shared/modals/confirm-modal/confirm-moda
     ConfirmModalComponent,
   ],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  private auth = inject(Auth);
+
   symbols: Record<string, string> = {
     USD: '$',
     EUR: '€',
@@ -35,31 +55,54 @@ export class DashboardComponent implements OnInit {
   totalIncome = 0;
   totalExpenses = 0;
   balance = 0;
-  clearConfirmVisible: boolean = false;
-  baseCurrency: string = 'NGN';
-  summaryCurrency: string = 'NGN';
+  clearConfirmVisible = false;
+  baseCurrency = 'NGN';
+  summaryCurrency = 'NGN';
 
   errorMessage: string | null = null;
+
+  userEmail: string | null = null;
+  showUserMenu = false;
+  deleteAccountVisible = false;
 
   @ViewChild('transactionList') transactionList!: TransactionListComponent;
   @ViewChild('transactionForm') transactionForm!: TransactionFormComponent;
 
   constructor(
+    private router: Router,
+    private toast: ToastrService,
     private cdr: ChangeDetectorRef,
     private transactionSvc: TransactionService,
     private exchangeRateSvc: ExchangeRateService
   ) {}
 
   ngOnInit() {
+    const user = this.auth.currentUser;
+    this.userEmail = user?.email || null;
+
     this.loadTransactions();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  toggleUserMenu() {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  closeUserMenu() {
+    this.showUserMenu = false;
   }
 
   resetForm() {
     this.transactionFormAdded = true;
 
     setTimeout(() => {
-      if (this.transactionForm && this.transactionForm.form) {
+      if (this.transactionForm?.form) {
         const today = new Date().toISOString().split('T')[0];
+
         this.transactionForm.form.reset({
           amount: 0,
           category: '',
@@ -72,12 +115,22 @@ export class DashboardComponent implements OnInit {
   }
 
   loadTransactions() {
-    this.transactionFormAdded = false;
-    this.transactionSvc.getTransactions().subscribe((data) => {
-      this.transactions = data;
-      this.calculateSummary();
+    onAuthStateChanged(this.auth, (user) => {
+      if (user) {
+        this.transactionFormAdded = false;
 
-      this.transactionSvc.updateLocalStorage(data);
+        this.transactionSvc
+          .getTransactions()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((data) => {
+            this.transactions = data;
+
+            // Save local copy ONCE (not inside service)
+            this.transactionSvc.updateLocalStorage(data);
+
+            this.calculateSummary();
+          });
+      }
     });
   }
 
@@ -93,68 +146,67 @@ export class DashboardComponent implements OnInit {
 
     if (
       uniqueCurrencies.size === 1 &&
-      [...uniqueCurrencies][0] === this.baseCurrency
+      uniqueCurrencies.has(this.baseCurrency)
     ) {
-      // All transactions in base currency? direct totals
       this.totalIncome = this.transactions
         .filter((t) => t.amount > 0)
         .reduce((sum, t) => sum + t.amount, 0);
+
       this.totalExpenses = this.transactions
         .filter((t) => t.amount < 0)
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
       this.balance = this.totalIncome - this.totalExpenses;
       this.summaryCurrency = this.baseCurrency;
-    } else {
-      // Mixed currencies? convert to baseCurrency
-      this.convertAndComputeTotals();
+      return;
     }
+
+    this.convertAndComputeTotals();
   }
 
   convertAndComputeTotals() {
     this.errorMessage = null;
+    if (!this.transactions.length) return;
 
     const currencies = Array.from(
       new Set(this.transactions.map((tx) => tx.currency))
     ).filter((c) => c !== this.baseCurrency);
 
-    this.exchangeRateSvc.getRates(this.baseCurrency, currencies).subscribe({
-      next: (data) => {
-        const rates = data.quotes;
-        let income = 0;
-        let expenses = 0;
+    this.exchangeRateSvc
+      .getRates(this.baseCurrency, currencies)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          const rates = data.quotes;
+          let income = 0;
+          let expenses = 0;
 
-        this.transactions.forEach((tx) => {
-          if (tx.currency === this.baseCurrency) {
-            if (tx.amount > 0) income += tx.amount;
-            else expenses += Math.abs(tx.amount);
-          } else {
-            // API gives inverted conversion with baseTarget,
-            const key = `${this.baseCurrency}${tx.currency}`; // e.g., NGNEUR
-            const rate = rates[key];
+          this.transactions.forEach((tx) => {
+            if (tx.currency === this.baseCurrency) {
+              if (tx.amount > 0) income += tx.amount;
+              else expenses += Math.abs(tx.amount);
+            } else {
+              const key = `${this.baseCurrency}${tx.currency}`;
+              const rate = rates[key];
 
-            if (!rate) {
-              console.warn(`No conversion rate found for ${tx.currency}`);
-              return;
+              if (!rate) return;
+
+              const converted = tx.amount / rate;
+
+              if (tx.amount > 0) income += converted;
+              else expenses += Math.abs(converted);
             }
+          });
 
-            const converted = tx.amount / rate; // amount in base currency
-
-            if (tx.amount > 0) income += converted;
-            else expenses += Math.abs(converted);
-          }
-        });
-
-        this.totalIncome = income;
-        this.totalExpenses = expenses;
-        this.balance = income - expenses;
-        this.summaryCurrency = this.baseCurrency;
-      },
-      error: (err) => {
-        console.error('Exchange rate API error', err);
-        this.errorMessage =
-          'Failed to fetch exchange rates. Totals may be inaccurate.';
-      },
-    });
+          this.totalIncome = income;
+          this.totalExpenses = expenses;
+          this.balance = income - expenses;
+          this.summaryCurrency = this.baseCurrency;
+        },
+        error: () => {
+          this.toast.error('Failed to fetch exchange rates.');
+        },
+      });
   }
 
   onTransactionAdded() {
@@ -165,9 +217,11 @@ export class DashboardComponent implements OnInit {
   showClearConfirm() {
     this.clearConfirmVisible = true;
   }
+
   hideClearConfirm() {
     this.clearConfirmVisible = false;
   }
+
   confirmClearAll() {
     this.transactionSvc.clearAll();
     this.transactions = [];
@@ -177,5 +231,39 @@ export class DashboardComponent implements OnInit {
     this.transactionFormAdded = false;
     this.hideClearConfirm();
     this.cdr.detectChanges();
+  }
+
+  showDeleteAccount() {
+    this.deleteAccountVisible = true;
+  }
+
+  hideDeleteAccount() {
+    this.deleteAccountVisible = false;
+  }
+
+  async logout() {
+    await signOut(this.auth);
+    this.toast.success('Logged out successfully');
+    this.router.navigate(['/login']);
+  }
+
+  async confirmDeleteAccount() {
+    const user = this.auth.currentUser;
+
+    if (!user) return;
+
+    try {
+      await deleteUser(user);
+      this.toast.success('Your Account has been deleted successfully');
+      this.router.navigate(['/login']);
+    } catch (err: any) {
+      if (err.code === 'auth/requires-recent-login') {
+        this.toast.error('Please log in again before deleting your account.');
+      } else {
+        this.toast.error('Failed to delete account.');
+      }
+    }
+
+    this.deleteAccountVisible = false;
   }
 }

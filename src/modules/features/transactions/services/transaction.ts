@@ -1,10 +1,9 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
-import { collectionData } from '@angular/fire/firestore';
-
 import {
   Firestore,
   collection,
+  collectionData,
   addDoc,
   deleteDoc,
   doc,
@@ -31,7 +30,10 @@ export class TransactionService {
     this.loadFromStorage()
   );
 
-  constructor(private firestore: Firestore, private auth: Auth) {}
+  private firestore = inject(Firestore);
+  private auth = inject(Auth);
+
+  constructor() {}
 
   updateLocalStorage(transactions: Transaction[]) {
     localStorage.setItem(this.storageKey, JSON.stringify(transactions));
@@ -45,37 +47,30 @@ export class TransactionService {
   getTransactions(): Observable<Transaction[]> {
     const user = this.auth.currentUser;
     if (!user) return this.transactions$.asObservable();
-    const transactionsRef = collection(this.firestore, 'transactions');
-    const q = query(transactionsRef, where('userId', '==', user.uid));
-    const obs = collectionData(q, { idField: 'id' }) as Observable<
-      Transaction[]
-    >;
 
-    // Keep local cache in sync
-    obs.subscribe((data) => this.updateLocalStorage(data));
-    return this.transactions$.asObservable(); // Always return local + synced
+    const ref = collection(this.firestore, 'transactions');
+    const q = query(ref, where('userId', '==', user.uid));
+
+    return collectionData(q, { idField: 'id' }) as Observable<Transaction[]>;
   }
 
-  // Accept only the form data, then add userId & timestamp
   async addTransaction(tx: Omit<Transaction, 'id' | 'userId'>) {
     const user = this.auth.currentUser;
     if (!user) throw new Error('User not logged in');
 
-    const docRef = await addDoc(collection(this.firestore, 'transactions'), {
+    return addDoc(collection(this.firestore, 'transactions'), {
       ...tx,
       userId: user.uid,
       createdAt: serverTimestamp(),
     });
-
-    return docRef;
   }
 
   deleteTransaction(id: string) {
     return deleteDoc(doc(this.firestore, `transactions/${id}`));
   }
 
-  clearAll(): void {
+  clearAll() {
     localStorage.removeItem(this.storageKey);
-    this.updateLocalStorage([]);
+    this.transactions$.next([]);
   }
 }
