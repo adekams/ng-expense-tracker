@@ -19,7 +19,7 @@ export class LoginComponent {
     private toast: ToastrService,
     private fb: FormBuilder,
     private authSvc: AuthService,
-    private router: Router
+    private router: Router,
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -33,14 +33,14 @@ export class LoginComponent {
     try {
       await this.authSvc.login(
         this.loginForm.value.email!,
-        this.loginForm.value.password!
+        this.loginForm.value.password!,
       );
       this.toast.success('Logged in successfully!');
       setTimeout(() => {
         this.router.navigate(['/dashboard']);
       }, 1000);
     } catch (err) {
-      alert('Login failed. Check your email or password.');
+      this.toast.error('Login failed. Check your email or password.');
     }
   }
 }

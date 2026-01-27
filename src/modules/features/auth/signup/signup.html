@@ -1,6 +1,11 @@
 <div class="auth-container">
+  <div class="auth-header">
+    <h1 class="app-title">Expense Tracker</h1>
+    <p class="app-description">Manage your finances with ease</p>
+  </div>
   <div class="auth-card">
     <h2>Create Account</h2>
+    <p class="subtitle">Get started with Expense Tracker</p>
 
     <form [formGroup]="signUpForm" (ngSubmit)="handleSignup()">
       <div class="input-group">
@@ -11,9 +16,11 @@
           placeholder="Enter your email"
         />
 
-        @if(signUpForm.controls['email'].invalid &&
-        signUpForm.controls['email'].touched) {
-        <small class="error">Valid email is required</small>
+        @if (
+          signUpForm.controls["email"].invalid &&
+          signUpForm.controls["email"].touched
+        ) {
+          <small class="error">Valid email is required</small>
         }
       </div>
 
@@ -25,9 +32,11 @@
           placeholder="Enter your password"
         />
 
-        @if(signUpForm.controls['password'].invalid &&
-        signUpForm.controls['password'].touched) {
-        <small class="error">Password is required</small>
+        @if (
+          signUpForm.controls["password"].invalid &&
+          signUpForm.controls["password"].touched
+        ) {
+          <small class="error">Password is required</small>
         }
       </div>
 
@@ -35,8 +44,8 @@
         {{ isLoading ? "Creating..." : "Sign Up" }}
       </button>
 
-      @if(errorMessage) {
-      <p class="error">{{ errorMessage }}</p>
+      @if (errorMessage) {
+        <p class="error">{{ errorMessage }}</p>
       }
 
       <p class="switch">

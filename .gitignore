@@ -49,3 +49,6 @@ src/environments/environment.prod.ts
 
 # Deployment documentation
 NETLIFY.md
+
+# Local Netlify folder
+.netlify

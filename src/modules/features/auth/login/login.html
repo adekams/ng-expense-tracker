@@ -1,7 +1,11 @@
 <div class="auth-container">
+  <div class="auth-header">
+    <h1 class="app-title">Expense Tracker</h1>
+    <p class="app-description">Manage your finances with ease</p>
+  </div>
   <div class="auth-card">
     <h2>Welcome Back</h2>
-    <p class="subtitle">Login to continue</p>
+    <p class="subtitle">Login to your Expense Tracker account</p>
 
     <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
       <div class="input-group">
@@ -12,9 +16,11 @@
           placeholder="Enter your email"
         />
 
-        @if(loginForm.controls['email'].invalid &&
-        loginForm.controls['email'].touched) {
-        <small class="error">Valid email is required</small>
+        @if (
+          loginForm.controls["email"].invalid &&
+          loginForm.controls["email"].touched
+        ) {
+          <small class="error">Valid email is required</small>
         }
       </div>
 
@@ -26,9 +32,11 @@
           placeholder="Enter your password"
         />
 
-        @if(loginForm.controls['password'].invalid &&
-        loginForm.controls['password'].touched) {
-        <small class="error">Password is required</small>
+        @if (
+          loginForm.controls["password"].invalid &&
+          loginForm.controls["password"].touched
+        ) {
+          <small class="error">Password is required</small>
         }
       </div>
 
