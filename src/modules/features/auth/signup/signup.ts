@@ -20,7 +20,7 @@ export class SignupComponent {
     private toast: ToastrService,
     private fb: FormBuilder,
     private auth: Auth,
-    private router: Router
+    private router: Router,
   ) {
     this.signUpForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -36,7 +36,7 @@ export class SignupComponent {
       await createUserWithEmailAndPassword(
         this.auth,
         this.signUpForm.value.email,
-        this.signUpForm.value.password
+        this.signUpForm.value.password,
       );
 
       this.isLoading = false;
@@ -47,6 +47,9 @@ export class SignupComponent {
     } catch (err: any) {
       this.isLoading = false;
       this.errorMessage = err.message || 'Signup failed';
+      this.toast.error(
+        'Something went wrong. Please try again or contact support.',
+      );
     }
   }
 }

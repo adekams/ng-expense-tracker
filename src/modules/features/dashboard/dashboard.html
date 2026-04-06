@@ -1,8 +1,10 @@
-<div class="p-6 space-y-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Expense Tracker</h1>
+<div class="dashboard-shell p-6 space-y-6">
+  <div class="flex justify-between items-center mb-6 gap-4">
+    <div>
+      <p class="eyebrow">Overview</p>
+      <h1 class="text-3xl font-bold">Ember - Expense Manager</h1>
+    </div>
 
-    <!-- User Dropdown -->
     <div class="relative" (mouseleave)="closeUserMenu()">
       <button
         class="flex items-center gap-2 bg-blue-200 hover:bg-blue-300 px-4 py-2 rounded cursor-pointer"
@@ -24,76 +26,298 @@
         </svg>
       </button>
 
-      <!-- Dropdown Menu -->
-      @if(showUserMenu) {
-      <div
-        class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded border z-10"
-      >
-        <div class="px-4 py-2 border-b text-sm text-gray-700">
-          <strong>{{ userEmail }}</strong>
+      @if (showUserMenu) {
+        <div
+          class="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded border z-10"
+        >
+          <div class="px-4 py-2 border-b text-sm text-gray-700">
+            <strong>{{ userEmail }}</strong>
+          </div>
+
+          <button
+            (click)="logout()"
+            class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+          >
+            Logout
+          </button>
+
+          <button
+            (click)="showDeleteAccount()"
+            class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+          >
+            Delete Account
+          </button>
         </div>
-
-        <button
-          (click)="logout()"
-          class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-        >
-          Logout
-        </button>
-
-        <button
-          (click)="showDeleteAccount()"
-          class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-        >
-          Delete Account
-        </button>
-      </div>
       }
     </div>
   </div>
 
-  <div class="mb-4 flex items-center">
-    <label class="mr-2 font-semibold">Base Currency:</label>
-    <select
-      [(ngModel)]="baseCurrency"
-      (change)="calculateSummary()"
-      class="border px-2 py-1 rounded"
-    >
-      <option value="USD">USD</option>
-      <option value="EUR">EUR</option>
-      <option value="NGN">NGN</option>
-      <option value="GBP">GBP</option>
-    </select>
+  <div class="grid gap-4 xl:grid-cols-[320px,1fr]">
+    <div class="surface-card flex items-center gap-3">
+      <div class="selector-icon">
+        <span>$</span>
+      </div>
+      <div class="flex-1">
+        <label class="block text-sm font-semibold text-slate-700 mb-2"
+          >Base Currency</label
+        >
+        <select
+          [(ngModel)]="baseCurrency"
+          (change)="calculateSummary()"
+          class="w-full border border-slate-200 bg-white px-3 py-2 rounded-xl"
+        >
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="NGN">NGN</option>
+          <option value="GBP">GBP</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="exchange-card">
+      <div
+        class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
+      >
+        <div>
+          <p class="exchange-label">Live exchange rates</p>
+          <h2 class="text-xl font-semibold text-white">
+            Conversions use {{ baseCurrency }} as the dashboard reference
+          </h2>
+          <p class="text-sm text-slate-200 mt-1">
+            The totals and charts below normalize multi-currency transactions
+            into {{ baseCurrency }}.
+          </p>
+        </div>
+
+        @if (exchangeRateDate) {
+          <div class="exchange-chip">
+            Updated {{ exchangeRateDate | date: "mediumDate" }}
+          </div>
+        }
+      </div>
+
+      @if (exchangeRateInsights.length) {
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          @for (rate of exchangeRateInsights; track rate.currency) {
+            <div class="rate-tile">
+              <div class="flex items-center gap-2">
+                <span class="rate-dot" [style.background]="rate.color"></span>
+                <span class="font-semibold">{{ rate.currency }}</span>
+              </div>
+              <p class="text-lg font-semibold mt-3">
+                1 {{ rate.currency }} =
+                {{ symbols[baseCurrency] || baseCurrency
+                }}{{ rate.basePerUnit | number: "1.2-4" }}
+              </p>
+              <p class="text-xs text-slate-300 mt-1">
+                Displayed in {{ baseCurrency }}
+              </p>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="rate-empty mt-4">
+          All current transactions already use {{ baseCurrency }}, so no
+          conversion rate is needed yet.
+        </div>
+      }
+    </div>
   </div>
 
-  @if(errorMessage) {
-  <div class="bg-red-100 text-red-700 p-2 rounded mb-4">
-    {{ errorMessage }}
-  </div>
+  @if (errorMessage) {
+    <div class="bg-red-100 text-red-700 p-3 rounded-xl">
+      {{ errorMessage }}
+    </div>
   }
 
-  <!-- Summary Cards -->
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div class="bg-green-100 p-4 rounded shadow">
+    <div class="summary-card summary-card-income">
       <h2 class="text-lg font-semibold">Total Income</h2>
       <p class="text-2xl font-bold text-green-700">
         {{ symbols[summaryCurrency] || summaryCurrency
-        }}{{ totalIncome | number : "1.0-0" }}
+        }}{{ totalIncome | number: "1.0-0" }}
       </p>
     </div>
-    <div class="bg-red-100 p-4 rounded shadow">
+    <div class="summary-card summary-card-expense">
       <h2 class="text-lg font-semibold">Total Expenses</h2>
       <p class="text-2xl font-bold text-red-700">
         {{ symbols[summaryCurrency] || summaryCurrency
-        }}{{ totalExpenses | number : "1.0-0" }}
+        }}{{ totalExpenses | number: "1.0-0" }}
       </p>
     </div>
-    <div class="bg-blue-100 p-4 rounded shadow">
+    <div class="summary-card summary-card-balance">
       <h2 class="text-lg font-semibold">Balance</h2>
       <p class="text-2xl font-bold text-blue-700">
         {{ symbols[summaryCurrency] || summaryCurrency
-        }}{{ balance | number : "1.0-0" }}
+        }}{{ balance | number: "1.0-0" }}
       </p>
     </div>
+  </div>
+
+  <div class="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
+    <section class="surface-card analytics-card">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="eyebrow">Chart by currency</p>
+          <h2 class="text-xl font-semibold text-slate-900">
+            Expense distribution across currencies
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">
+            Bars are normalized into {{ summaryCurrency }} for a fair
+            comparison.
+          </p>
+        </div>
+        <span class="analytics-chip">
+          {{ currencyInsights.length }} tracked
+        </span>
+      </div>
+
+      @if (currencyInsights.length) {
+        <div class="mt-6 space-y-4">
+          @for (item of currencyInsights; track item.currency) {
+            <div class="currency-row">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="rate-dot"
+                      [style.background]="item.color"
+                    ></span>
+                    <span class="font-semibold text-slate-800">{{
+                      item.currency
+                    }}</span>
+                    <span class="text-xs text-slate-500">
+                      {{ item.transactionCount }} txns
+                    </span>
+                  </div>
+                  <p class="text-sm text-slate-500 mt-1">
+                    Expenses:
+                    {{ symbols[summaryCurrency] || summaryCurrency
+                    }}{{ item.expenses | number: "1.0-0" }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-lg font-semibold text-slate-900">
+                    {{ item.expenseShare | number: "1.0-0" }}%
+                  </p>
+                  <p class="text-xs text-slate-500">of total expenses</p>
+                </div>
+              </div>
+
+              <div class="bar-track mt-3">
+                <div
+                  class="bar-fill"
+                  [style.width.%]="item.expenseShare"
+                  [style.background]="item.color"
+                ></div>
+              </div>
+
+              <div class="mt-3 grid grid-cols-3 gap-2 text-sm">
+                <div class="mini-stat">
+                  <span class="mini-label">Income</span>
+                  <strong>
+                    {{ symbols[summaryCurrency] || summaryCurrency
+                    }}{{ item.income | number: "1.0-0" }}
+                  </strong>
+                </div>
+                <div class="mini-stat">
+                  <span class="mini-label">Expenses</span>
+                  <strong>
+                    {{ symbols[summaryCurrency] || summaryCurrency
+                    }}{{ item.expenses | number: "1.0-0" }}
+                  </strong>
+                </div>
+                <div class="mini-stat">
+                  <span class="mini-label">Net</span>
+                  <strong>
+                    {{ symbols[summaryCurrency] || summaryCurrency
+                    }}{{ item.balance | number: "1.0-0" }}
+                  </strong>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="empty-state mt-6">
+          Add a few transactions to see how your spending changes by currency.
+        </p>
+      }
+    </section>
+
+    <section class="surface-card analytics-card">
+      <div>
+        <p class="eyebrow">Expense breakdown</p>
+        <h2 class="text-xl font-semibold text-slate-900">
+          Where the money is going
+        </h2>
+        <p class="text-sm text-slate-500 mt-1">
+          Categories are ranked by their share of total expenses in
+          {{ summaryCurrency }}.
+        </p>
+      </div>
+
+      @if (expenseBreakdown.length) {
+        <div class="mt-6 grid gap-6 lg:grid-cols-[220px,1fr] items-center">
+          <div class="donut-wrap">
+            <div
+              class="donut-chart"
+              [style.background]="expenseBreakdownGradient"
+            >
+              <div class="donut-center">
+                <span class="text-xs uppercase tracking-[0.25em] text-slate-400"
+                  >Total</span
+                >
+                <strong class="text-lg text-slate-900">
+                  {{ symbols[summaryCurrency] || summaryCurrency
+                  }}{{ totalExpenses | number: "1.0-0" }}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            @for (item of expenseBreakdown; track item.category) {
+              <div class="breakdown-row">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="rate-dot"
+                      [style.background]="item.color"
+                    ></span>
+                    <div>
+                      <p class="font-semibold text-slate-800">
+                        {{ item.category }}
+                      </p>
+                      <p class="text-xs text-slate-500">
+                        {{ item.share | number: "1.0-0" }}% of expenses
+                      </p>
+                    </div>
+                  </div>
+                  <strong class="text-slate-900">
+                    {{ symbols[summaryCurrency] || summaryCurrency
+                    }}{{ item.amount | number: "1.0-0" }}
+                  </strong>
+                </div>
+
+                <div class="bar-track mt-3">
+                  <div
+                    class="bar-fill"
+                    [style.width.%]="item.share"
+                    [style.background]="item.color"
+                  ></div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <p class="empty-state mt-6">
+          Expense categories will appear here once you record at least one
+          expense.
+        </p>
+      }
+    </section>
   </div>
 
   <div class="flex flex-col sm:flex-row sm:justify-between gap-2">
@@ -112,31 +336,50 @@
     </button>
   </div>
 
-  <!-- Transaction Form Modal -->
-  @if(transactionFormAdded) {
-  <app-transaction-form
-    #transactionForm
-    (added)="onTransactionAdded()"
-    (close)="transactionFormAdded = false"
-  ></app-transaction-form
-  >}
+  @if (transactionFormAdded) {
+    <app-transaction-form
+      #transactionForm
+      (added)="onTransactionAdded()"
+      (close)="transactionFormAdded = false"
+    ></app-transaction-form>
+  }
 
-  <!-- Transaction List Preview -->
   <app-transaction-list #transactionList></app-transaction-list>
+
+  <footer class="dashboard-footer">
+    <div class="footer-brand" aria-label="Expense Manager copyright">
+      <span class="footer-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" role="img">
+          <rect x="4" y="24" width="8" height="16" rx="3"></rect>
+          <rect x="20" y="14" width="8" height="26" rx="3"></rect>
+          <rect x="36" y="8" width="8" height="32" rx="3"></rect>
+        </svg>
+      </span>
+      <div>
+        <p class="footer-title">Ember - Expense Manager</p>
+        <p class="footer-copy">
+          Copyright {{ currentYear }} Ember - Expense Manager. All rights
+          reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
 </div>
 
-@if(clearConfirmVisible) {
-<app-confirm-modal
-  title="Delete All Transactions"
-  message="Are you sure you want to delete all transactions? This cannot be undone."
-  (confirmed)="confirmClearAll()"
-  (cancelled)="hideClearConfirm()"
-></app-confirm-modal
->} @if(deleteAccountVisible) {
-<app-confirm-modal
-  title="Delete Account"
-  message="Are you sure you want to delete your account? All your data will be permanently removed and cannot be recovered."
-  (confirmed)="confirmDeleteAccount()"
-  (cancelled)="hideDeleteAccount()"
-></app-confirm-modal>
+@if (clearConfirmVisible) {
+  <app-confirm-modal
+    title="Delete All Transactions"
+    message="Are you sure you want to delete all transactions? This cannot be undone."
+    (confirmed)="confirmClearAll()"
+    (cancelled)="hideClearConfirm()"
+  ></app-confirm-modal>
+}
+
+@if (deleteAccountVisible) {
+  <app-confirm-modal
+    title="Delete Account"
+    message="Are you sure you want to delete your account? All your data will be permanently removed and cannot be recovered."
+    (confirmed)="confirmDeleteAccount()"
+    (cancelled)="hideDeleteAccount()"
+  ></app-confirm-modal>
 }
